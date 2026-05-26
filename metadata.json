@@ -1,0 +1,6 @@
+{
+  "name": "Power & Data Tracker",
+  "description": "Monitor per-app screen time, network data usage, configure app usage limits/locks, and track granular battery depletion rates with heavy drain alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
