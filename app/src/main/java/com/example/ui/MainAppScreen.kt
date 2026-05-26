@@ -32,6 +32,7 @@ fun MainAppScreen(viewModel: TrackerViewModel) {
     )
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         bottomBar = {
             NavigationBar {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()

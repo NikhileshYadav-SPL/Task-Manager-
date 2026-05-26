@@ -75,7 +75,7 @@ class TrackerRepository(private val context: Context) {
         }
     }
 
-    suspend fun populateFakeInitialData() {
+    suspend fun populateFakeInitialData() = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         // Pre-populates clean simulation records so the app is instantly rich on first open.
         val currentLimits = appLimitDao.getAllLimits()
         if (currentLimits.isEmpty()) {
