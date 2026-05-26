@@ -125,6 +125,7 @@ class TelemetryWidgetService : Service() {
                 private var initialY = 0
                 private var initialTouchX = 0f
                 private var initialTouchY = 0f
+                private var lastUpdateTime = 0L
 
                 override fun onTouch(v: View, event: MotionEvent): Boolean {
                     when (event.action) {
@@ -136,9 +137,21 @@ class TelemetryWidgetService : Service() {
                             return true
                         }
                         MotionEvent.ACTION_MOVE -> {
+                            val currentTime = System.currentTimeMillis()
                             params.x = initialX + (event.rawX - initialTouchX).toInt()
                             params.y = initialY + (event.rawY - initialTouchY).toInt()
-                            windowManager.updateViewLayout(composeView, params)
+                            if (currentTime - lastUpdateTime > 16) { // throttle to ~60fps max
+                                try {
+                                    windowManager.updateViewLayout(composeView, params)
+                                } catch (e: Exception) {}
+                                lastUpdateTime = currentTime
+                            }
+                            return true
+                        }
+                        MotionEvent.ACTION_UP -> {
+                            try {
+                                windowManager.updateViewLayout(composeView, params)
+                            } catch (e: Exception) {}
                             return true
                         }
                     }

@@ -15,12 +15,15 @@ import com.example.ui.MainAppScreen
 import com.example.ui.TrackerViewModel
 import com.example.ui.theme.MyApplicationTheme
 
+import androidx.compose.ui.unit.dp
+
 class MainActivity : ComponentActivity() {
   private val viewModel: TrackerViewModel by viewModels()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
+    
     setContent {
       MyApplicationTheme {
         MainAppScreen(viewModel = viewModel)

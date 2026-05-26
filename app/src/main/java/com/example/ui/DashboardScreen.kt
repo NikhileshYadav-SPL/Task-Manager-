@@ -150,7 +150,11 @@ fun DashboardScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Button(
                                     onClick = {
-                                        context.startActivity(viewModel.getPermissionIntent())
+                                        try {
+                                            context.startActivity(viewModel.getPermissionIntent())
+                                        } catch (e: Exception) {
+                                            android.widget.Toast.makeText(context, "Permission settings not available on this device.", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)

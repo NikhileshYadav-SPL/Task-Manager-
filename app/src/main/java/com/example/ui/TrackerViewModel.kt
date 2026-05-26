@@ -61,7 +61,11 @@ class TrackerViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         viewModelScope.launch {
-            repository.populateFakeInitialData()
+            try {
+                repository.populateFakeInitialData()
+            } catch (e: Exception) {
+                Log.e("TrackerViewModel", "Error populating data", e)
+            }
             refreshStats()
         }
     }
@@ -71,29 +75,33 @@ class TrackerViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun refreshStats() {
-        val hasPerm = repository.hasUsageStatsPermission()
+        val hasPerm = try { repository.hasUsageStatsPermission() } catch (e: Exception) { false }
         _isPermissionGranted.value = hasPerm
         
         // Fetch stats from repository (combining real queries and fallbacks/simulators)
         viewModelScope.launch {
-            val stats = repository.getAppUsageStats()
-            
-            // Check limits against current times to auto-lock apps
-            for (app in stats) {
-                if (app.isLimitEnabled && app.screenTimeMs >= app.limitMinutes * 60 * 1000L) {
-                    if (!app.isLocked) {
-                        repository.updateLockedStatus(app.packageName, true)
-                    }
-                } else {
-                    if (app.isLocked && app.limitMinutes > 0 && app.screenTimeMs < app.limitMinutes * 60 * 1000L) {
-                        repository.updateLockedStatus(app.packageName, false)
+            try {
+                val stats = repository.getAppUsageStats()
+                
+                // Check limits against current times to auto-lock apps
+                for (app in stats) {
+                    if (app.isLimitEnabled && app.screenTimeMs >= app.limitMinutes * 60 * 1000L) {
+                        if (!app.isLocked) {
+                            repository.updateLockedStatus(app.packageName, true)
+                        }
+                    } else {
+                        if (app.isLocked && app.limitMinutes > 0 && app.screenTimeMs < app.limitMinutes * 60 * 1000L) {
+                            repository.updateLockedStatus(app.packageName, false)
+                        }
                     }
                 }
-            }
 
-            // Sync updated locked configurations back and emit
-            val updatedStats = repository.getAppUsageStats()
-            _appUsageStats.value = updatedStats
+                // Sync updated locked configurations back and emit
+                val updatedStats = repository.getAppUsageStats()
+                _appUsageStats.value = updatedStats
+            } catch (e: Exception) {
+                Log.e("TrackerViewModel", "Error refreshing stats", e)
+            }
         }
     }
 
@@ -107,7 +115,9 @@ class TrackerViewModel(application: Application) : AndroidViewModel(application)
 
     fun saveAppLimit(packageName: String, appName: String, limitMinutes: Int, isEnabled: Boolean) {
         viewModelScope.launch {
-            repository.insertOrUpdateLimit(packageName, appName, limitMinutes, isEnabled)
+            try {
+                repository.insertOrUpdateLimit(packageName, appName, limitMinutes, isEnabled)
+            } catch (e: Exception) { Log.e("TrackerVM", "Error", e) }
             refreshStats()
             closeSelectedAppLimitConfig()
         }
@@ -115,9 +125,11 @@ class TrackerViewModel(application: Application) : AndroidViewModel(application)
 
     fun removeAppLimit(packageName: String) {
         viewModelScope.launch {
-            repository.deleteLimitByPackage(packageName)
-            // also ensure unlocking
-            repository.updateLockedStatus(packageName, false)
+            try {
+                repository.deleteLimitByPackage(packageName)
+                // also ensure unlocking
+                repository.updateLockedStatus(packageName, false)
+            } catch (e: Exception) { Log.e("TrackerVM", "Error", e) }
             refreshStats()
             closeSelectedAppLimitConfig()
         }
@@ -147,24 +159,28 @@ class TrackerViewModel(application: Application) : AndroidViewModel(application)
 
     fun bypassLockForNow(packageName: String) {
         viewModelScope.launch {
-            // Set limit flag or temporarily increment limit with bypass
-            val limits = savedLimits.value
-            val limit = limits.find { it.packageName == packageName }
-            if (limit != null) {
-                // simple bypass: double the minutes limit or disable it
-                repository.insertOrUpdateLimit(packageName, limit.appName, limit.limitMinutes + 15, limit.isEnabled)
-                repository.updateLockedStatus(packageName, false)
-            }
+            try {
+                // Set limit flag or temporarily increment limit with bypass
+                val limits = savedLimits.value
+                val limit = limits.find { it.packageName == packageName }
+                if (limit != null) {
+                    // simple bypass: double the minutes limit or disable it
+                    repository.insertOrUpdateLimit(packageName, limit.appName, limit.limitMinutes + 15, limit.isEnabled)
+                    repository.updateLockedStatus(packageName, false)
+                }
+            } catch (e: Exception) { Log.e("TrackerVM", "Error", e) }
             _lockedAppShowOverlay.value = null
             refreshStats()
         }
     }
 
-    fun getCurrentBatteryLevel() = repository.getCurrentBatteryLevel()
+    fun getCurrentBatteryLevel() = try { repository.getCurrentBatteryLevel() } catch (e: Exception) { 75 }
 
     fun simulateBatteryLog(packageName: String, appName: String, startPct: Int, endPct: Int, durationMins: Int) {
         viewModelScope.launch {
-            repository.insertBatteryLog(packageName, appName, startPct, endPct, durationMins * 60L)
+            try {
+                repository.insertBatteryLog(packageName, appName, startPct, endPct, durationMins * 60L)
+            } catch (e: Exception) { Log.e("TrackerVM", "Error", e) }
             refreshStats()
         }
     }
